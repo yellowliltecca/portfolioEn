@@ -51,7 +51,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            pointer-events: none; /* Allows click/touch through */
+            pointer-events: none;
         }
         #rain-canvas { z-index: -2; }
         #lightning-canvas { z-index: -1; mix-blend-mode: screen; }
@@ -115,20 +115,21 @@
 
         .badge-wrapper {
             position: absolute;
-            top: 0;
-            right: 0;
             transform-origin: top center;
             z-index: 40;
             animation: dropBounce 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, 
                        swing 3.5s 1.2s ease-in-out infinite alternate;
         }
 
-        /* Mobile Adjustments for Badge */
+        /* Mobile Adjustments for Badge & Hero */
         @media (max-width: 767px) {
             .badge-wrapper {
                 transform: scale(0.65) translateX(15%);
                 right: -20px;
-                top: 300px; /* Сместили визитку значительно ниже, чтобы 100% избежать перекрытия имени */
+                top: 20px; /* Визитка висит наверху мобильного экрана */
+            }
+            #home {
+                padding-top: 190px; /* Сместили контент ниже, чтобы освободить место под визитку */
             }
         }
         @media (min-width: 768px) {
@@ -136,6 +137,9 @@
                 transform: scale(1) translateX(0);
                 right: 10%;
                 top: 0;
+            }
+            #home {
+                padding-top: 0;
             }
         }
 
@@ -208,7 +212,7 @@
             
             <div class="absolute w-[80vw] h-[80vw] md:w-[40vw] md:h-[40vw] bg-accent/15 blur-[100px] md:blur-[120px] rounded-full -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
             
-            <div class="glass-card px-4 py-1.5 rounded-full mb-6 text-neon text-[10px] md:text-xs font-mono tracking-widest font-semibold flex items-center gap-2 max-w-fit mt-16 md:mt-0">
+            <div class="glass-card px-4 py-1.5 rounded-full mb-6 text-neon text-[10px] md:text-xs font-mono tracking-widest font-semibold flex items-center gap-2 max-w-fit mt-4 md:mt-0">
                 <div class="w-1.5 h-1.5 rounded-full bg-neon animate-pulse shadow-[0_0_10px_#00e5ff]"></div>
                 Саратов
             </div>
@@ -350,7 +354,7 @@
                         <span class="px-2.5 py-1 text-[10px] uppercase font-bold rounded-md bg-deep border border-gray-500/50 text-gray-300">Algorithms</span>
                     </div>
                 </div>
-
+                
                 <!-- Project 3 -->
                 <div class="glass-card interactive rounded-2xl p-6 flex flex-col group">
                     <div class="w-12 h-12 rounded-xl bg-green-500/20 border border-green-500/40 flex items-center justify-center mb-5 group-hover:scale-110 transition duration-300 relative z-20">
@@ -377,13 +381,12 @@
         // --- 0. Audio Engine (HTML5 Audio) ---
         let audioEnabled = false;
 
-        // Используем качественные публичные аудиофайлы
         const rainAudio = new Audio('https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg');
         rainAudio.loop = true;
-        rainAudio.volume = 0.3; // Спокойная громкость для фона
+        rainAudio.volume = 0.3;
 
         const thunderAudio = new Audio('https://actions.google.com/sounds/v1/weather/thunder_crack.ogg');
-        thunderAudio.volume = 0.8; // Мощный раскат грома
+        thunderAudio.volume = 0.8;
 
         const soundToggle = document.getElementById('sound-toggle');
         const soundIcon = document.getElementById('sound-icon');
@@ -397,9 +400,8 @@
 
         function triggerThunderSound() {
             if (!audioEnabled) return;
-            // Небольшая задержка для имитации расстояния до молнии
             setTimeout(() => {
-                thunderAudio.currentTime = 0; // Сбрасываем звук на начало
+                thunderAudio.currentTime = 0;
                 thunderAudio.play().catch(err => console.log("Audio play blocked:", err));
             }, Math.random() * 200 + 100); 
         }
@@ -495,7 +497,7 @@
         function generateLightning() {
             const paths = [];
             const startX = Math.random() * (lCanvas.width * 0.8) + (lCanvas.width * 0.1);
-            const maxDepth = isMobile ? 3 : 4; // optimization
+            const maxDepth = isMobile ? 3 : 4;
             
             function createBranch(x, y, angle, depth, lengthMod) {
                 if (depth > maxDepth || y > lCanvas.height) return;
@@ -570,7 +572,6 @@
         const sctx = dropSpriteCache.getContext('2d');
         const cx = 20, cy = 20, cr = 10;
         
-        // Prerender drop with highlights/shadows
         sctx.beginPath();
         sctx.arc(cx, cy + 3, cr, 0, Math.PI*2);
         sctx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -601,7 +602,7 @@
                 this.canvas.style.position = 'absolute';
                 this.canvas.style.top = '0';
                 this.canvas.style.left = '0';
-                this.canvas.style.pointerEvents = 'none'; // CRITICAL for mobile touch
+                this.canvas.style.pointerEvents = 'none';
                 this.canvas.style.zIndex = '0';
                 this.canvas.style.borderRadius = computedStyle.borderRadius;
                 
