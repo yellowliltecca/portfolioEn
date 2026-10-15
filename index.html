@@ -45,26 +45,16 @@
         }
 
         /* --- Canvases --- */
-        #rain-canvas {
+        #rain-canvas, #lightning-canvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            z-index: -2;
-            pointer-events: none;
+            pointer-events: none; /* Allows click/touch through */
         }
-
-        #lightning-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -1;
-            pointer-events: none;
-            mix-blend-mode: screen; 
-        }
+        #rain-canvas { z-index: -2; }
+        #lightning-canvas { z-index: -1; mix-blend-mode: screen; }
 
         /* --- Glassmorphism --- */
         .glass-card {
@@ -85,8 +75,6 @@
                 box-shadow: 0 15px 40px rgba(0, 229, 255, 0.15);
             }
         }
-
-        .glass-card.no-hover-scale:hover { transform: none; }
 
         .text-glow {
             background: linear-gradient(to right, #00e5ff, #0055ff);
@@ -125,22 +113,28 @@
             100% { transform: rotate(-4deg); }
         }
 
-        .badge-container {
+        .badge-wrapper {
             position: absolute;
             top: 0;
             right: 0;
             transform-origin: top center;
             z-index: 40;
-            transform: scale(0.65) translateX(20%);
             animation: dropBounce 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, 
                        swing 3.5s 1.2s ease-in-out infinite alternate;
         }
 
-        @media (min-width: 640px) {
-            .badge-container { transform: scale(0.8) translateX(0); right: 5%; }
+        /* Mobile Adjustments for Badge */
+        @media (max-width: 767px) {
+            .badge-wrapper {
+                transform: scale(0.7) translateX(15%);
+                right: -20px;
+            }
         }
         @media (min-width: 768px) {
-            .badge-container { transform: scale(1) translateX(0); right: 10%; }
+            .badge-wrapper {
+                transform: scale(1) translateX(0);
+                right: 10%;
+            }
         }
 
         ::-webkit-scrollbar { width: 8px; }
@@ -150,39 +144,37 @@
 </head>
 <body class="antialiased selection:bg-neon selection:text-black">
 
-    <!-- Sound Toggle Button -->
-    <button id="soundToggle" class="fixed top-24 md:top-28 right-4 md:right-6 z-[60] glass-card w-12 h-12 rounded-full flex items-center justify-center text-gray-400 hover:text-neon transition-colors cursor-pointer shadow-lg hover:scale-110 duration-300">
-        <i class="fa-solid fa-volume-xmark text-lg" id="soundIcon"></i>
-    </button>
-
     <canvas id="rain-canvas"></canvas>
     <canvas id="lightning-canvas"></canvas>
 
+    <!-- Sound Toggle Button -->
+    <button id="sound-toggle" class="fixed top-24 right-4 md:top-6 md:right-6 z-50 glass-card px-4 py-2 rounded-full flex items-center gap-2 hover:bg-white/10 transition-colors text-xs md:text-sm text-gray-300 font-mono">
+        <i class="fa-solid fa-volume-xmark" id="sound-icon"></i>
+        <span id="sound-text">Звук</span>
+    </button>
+
     <!-- Navbar -->
-    <nav class="fixed w-full z-50 top-0 py-3 px-4 md:px-6 transition-all duration-300">
-        <div class="glass-card mx-auto px-4 md:px-6 py-3 flex justify-between items-center max-w-6xl rounded-2xl shadow-lg">
+    <nav class="fixed w-full z-50 top-0 py-3 px-4 md:px-6 transition-all duration-300 pointer-events-none">
+        <div class="glass-card mx-auto px-4 md:px-6 py-3 flex justify-between items-center max-w-6xl rounded-2xl shadow-lg pointer-events-auto">
             <a href="#" class="text-lg md:text-xl font-black tracking-widest text-white text-glow font-mono">KUBYSHEV</a>
             <div class="hidden md:flex space-x-8 text-sm font-semibold tracking-wide relative z-20">
                 <a href="#about" class="hover:text-neon transition duration-300">О себе</a>
                 <a href="#skills" class="hover:text-neon transition duration-300">Навыки</a>
                 <a href="#projects" class="hover:text-neon transition duration-300">Проекты</a>
             </div>
-            <a href="https://t.me/odiqe" target="_blank" class="px-4 py-2 md:px-5 md:py-2 rounded-xl bg-gradient-to-r from-accent to-neon hover:from-neon hover:to-accent text-white font-bold transition-all text-xs md:text-sm relative z-20">
-                Связаться
-            </a>
         </div>
     </nav>
 
-    <main class="pt-28 md:pt-32 pb-20 px-4 md:px-6 max-w-6xl mx-auto flex flex-col gap-20 md:gap-24 relative z-10 overflow-hidden">
+    <main class="pt-32 pb-20 px-4 md:px-6 max-w-6xl mx-auto flex flex-col gap-20 md:gap-24 relative z-10 overflow-hidden">
 
         <!-- Hero Section -->
         <section id="home" class="min-h-[70vh] md:min-h-[60vh] flex flex-col justify-center items-start text-left reveal active relative">
             
             <!-- Hanging ID Badge -->
-            <div class="badge-container flex flex-col items-center">
+            <div class="badge-wrapper flex flex-col items-center">
                 <div class="w-2 h-24 md:h-32 bg-gradient-to-b from-gray-900 via-gray-600 to-accent rounded-b-full shadow-[0_0_10px_rgba(0,85,255,0.5)]"></div>
                 
-                <div class="glass-card no-hover-scale p-5 md:p-6 rounded-2xl w-[260px] md:w-[280px] flex flex-col items-center -mt-2 border border-neon/30 bg-deep/80 backdrop-blur-xl pointer-events-auto">
+                <div class="glass-card p-5 md:p-6 rounded-2xl w-[260px] md:w-[280px] flex flex-col items-center -mt-2 border border-neon/30 bg-deep/80 backdrop-blur-xl pointer-events-auto">
                     <div class="w-12 h-2.5 bg-deep border border-gray-600 rounded-full mb-4 shadow-inner relative z-20"></div>
                     
                     <div class="text-[10px] font-black tracking-widest text-neon border-b border-neon/30 pb-2 mb-3 w-full text-center relative z-20">
@@ -221,10 +213,10 @@
             
             <h1 class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-4 tracking-tighter leading-tight relative z-20 p-2 -ml-2 rounded-lg">
                 <span class="text-white block">Kubyshev</span>
-                <span class="text-neon block text-glow">Rustam</span>
+                <span class="text-neon block text-glow mt-1">Rustam</span>
             </h1>
             
-            <h2 class="text-xl sm:text-2xl md:text-3xl text-gray-400 mb-8 font-medium max-w-xs sm:max-w-md md:max-w-lg relative z-20 p-2 -ml-2 rounded-lg text-glow font-mono">
+            <h2 class="text-xl sm:text-2xl md:text-3xl text-gray-400 mb-8 font-medium max-w-xs sm:max-w-md md:max-w-lg relative z-20 p-2 -ml-2 rounded-lg font-mono">
                 Junior C++ Developer
             </h2>
         </section>
@@ -269,7 +261,7 @@
 
         <!-- Skills Section -->
         <section id="skills" class="reveal">
-            <div class="text-center mb-10 md:mb-12"><h2 class="text-2xl md:text-4xl font-black text-white font-mono inline-block p-2">Технические <span class="text-glow">Навыки</span></h2></div>
+            <div class="text-center mb-10 md:mb-12"><h2 class="text-2xl md:text-4xl font-black text-white font-mono inline-block p-2">Технические Навыки</h2></div>
             
             <!-- Circular Progress Bars -->
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 mb-8 relative z-20">
@@ -329,7 +321,7 @@
 
         <!-- Projects Section -->
         <section id="projects" class="reveal">
-            <div class="text-center mb-10 md:mb-12"><h2 class="text-2xl md:text-4xl font-black text-white font-mono inline-block p-2">Мои <span class="text-glow">Проекты</span></h2></div>
+            <div class="text-center mb-10 md:mb-12"><h2 class="text-2xl md:text-4xl font-black text-white font-mono inline-block p-2">Мои Проекты</h2></div>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-20">
                 <!-- Project 1 -->
@@ -378,39 +370,53 @@
         <p>© 2026 <span class="text-gray-400">Kubyshev Rustam</span>. Junior C++ Developer.</p>
     </footer>
 
-    <!-- SCENE SCRIPTS -->
+    <!-- SCENE & AUDIO SCRIPTS -->
     <script>
-        // --- 0. Audio Manager ---
-        let soundEnabled = false;
+        // --- 0. Audio Engine (HTML5 Audio) ---
+        let audioEnabled = false;
+
+        // Используем качественные публичные аудиофайлы
         const rainAudio = new Audio('https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg');
         rainAudio.loop = true;
-        rainAudio.volume = 0.3;
+        rainAudio.volume = 0.3; // Спокойная громкость для фона
 
         const thunderAudio = new Audio('https://actions.google.com/sounds/v1/weather/thunder_crack.ogg');
-        thunderAudio.volume = 0.8;
+        thunderAudio.volume = 0.8; // Мощный раскат грома
 
-        const soundToggle = document.getElementById('soundToggle');
-        const soundIcon = document.getElementById('soundIcon');
+        const soundToggle = document.getElementById('sound-toggle');
+        const soundIcon = document.getElementById('sound-icon');
+
+        function initAudio() {
+            rainAudio.play().catch(err => console.log("Audio play blocked by browser:", err));
+            audioEnabled = true;
+            soundIcon.classList.remove('fa-volume-xmark');
+            soundIcon.classList.add('fa-volume-high');
+        }
+
+        function triggerThunderSound() {
+            if (!audioEnabled) return;
+            // Небольшая задержка для имитации расстояния до молнии
+            setTimeout(() => {
+                thunderAudio.currentTime = 0; // Сбрасываем звук на начало
+                thunderAudio.play().catch(err => console.log("Audio play blocked:", err));
+            }, Math.random() * 200 + 100); 
+        }
 
         soundToggle.addEventListener('click', () => {
-            soundEnabled = !soundEnabled;
-            if (soundEnabled) {
-                soundIcon.classList.replace('fa-volume-xmark', 'fa-volume-high');
-                soundIcon.classList.replace('text-gray-400', 'text-neon');
-                rainAudio.play().catch(e => console.log('Audio play failed:', e));
+            if (!audioEnabled) {
+                initAudio();
             } else {
-                soundIcon.classList.replace('fa-volume-high', 'fa-volume-xmark');
-                soundIcon.classList.replace('text-neon', 'text-gray-400');
+                audioEnabled = false;
                 rainAudio.pause();
+                soundIcon.classList.remove('fa-volume-high');
+                soundIcon.classList.add('fa-volume-xmark');
             }
         });
 
-        // --- 1. Intersection Observers ---
+        // --- 1. Observers ---
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('active');
-                }
+                if (entry.isIntersecting) entry.target.classList.add('active');
             });
         }, { threshold: 0.1 });
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
@@ -420,15 +426,17 @@
                 if (entry.isIntersecting) {
                     const circle = entry.target;
                     const percent = circle.getAttribute('data-percent');
-                    const offset = 251.2 - (251.2 * percent / 100);
-                    circle.style.strokeDashoffset = offset;
+                    circle.style.strokeDashoffset = 251.2 - (251.2 * percent / 100);
                     statsObserver.unobserve(circle);
                 }
             });
         }, { threshold: 0.5 });
         document.querySelectorAll('.progress-ring__circle').forEach(el => statsObserver.observe(el));
 
-        // --- 2. Background Rain Physics ---
+        // --- Utils ---
+        const isMobile = window.innerWidth < 768;
+
+        // --- 2. Rain Canvas ---
         const rCanvas = document.getElementById('rain-canvas');
         const rCtx = rCanvas.getContext('2d', { alpha: false });
         let rW, rH, rDrops = [];
@@ -437,32 +445,25 @@
             rW = rCanvas.width = window.innerWidth;
             rH = rCanvas.height = window.innerHeight;
             rDrops = [];
-            const dropCount = rW > 800 ? 120 : 50;
+            const dropCount = isMobile ? 40 : 100;
             for (let i = 0; i < dropCount; i++) {
                 rDrops.push({
-                    x: Math.random() * rW,
-                    y: Math.random() * rH,
-                    len: Math.random() * 20 + 10,
-                    vel: Math.random() * 10 + 15
+                    x: Math.random() * rW, y: Math.random() * rH,
+                    len: Math.random() * 20 + 10, vel: Math.random() * 10 + 15
                 });
             }
         }
         window.addEventListener('resize', () => {
-            if (Math.abs(window.innerWidth - rW) > 50) {
-                initRain();
-            } else {
-                rCanvas.height = rH = window.innerHeight;
-            }
-        });
+            if (Math.abs(window.innerWidth - rW) > 50) initRain();
+            else rCanvas.height = rH = window.innerHeight;
+        }, { passive: true });
         initRain();
 
         function drawRain() {
             rCtx.fillStyle = '#02040a';
             rCtx.fillRect(0, 0, rW, rH);
-            
             rCtx.strokeStyle = 'rgba(0, 229, 255, 0.2)';
             rCtx.lineWidth = 1;
-            rCtx.lineCap = 'round';
             rCtx.beginPath();
             
             for (let i = 0; i < rDrops.length; i++) {
@@ -470,63 +471,48 @@
                 rCtx.moveTo(p.x, p.y);
                 rCtx.lineTo(p.x, p.y + p.len);
                 p.y += p.vel;
-                
-                if (p.y > rH) {
-                    p.y = -20;
-                    p.x = Math.random() * rW;
-                }
+                if (p.y > rH) { p.y = -20; p.x = Math.random() * rW; }
             }
             rCtx.stroke();
             requestAnimationFrame(drawRain);
         }
         requestAnimationFrame(drawRain);
 
-        // --- 3. Lightning Generator Algorithm ---
+        // --- 3. Lightning Canvas ---
         const lCanvas = document.getElementById('lightning-canvas');
         const lCtx = lCanvas.getContext('2d');
-        
         let lightningState = {
-            active: false,
-            alpha: 0,
-            flashAlpha: 0,
-            paths: [],
-            lastStrike: 0,
-            nextStrikeDelay: Math.random() * 4000 + 3000
+            active: false, alpha: 0, flashAlpha: 0, paths: [],
+            lastStrike: 0, nextStrikeDelay: Math.random() * 5000 + 4000
         };
 
-        function resizeLightning() {
-            lCanvas.width = window.innerWidth;
-            lCanvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeLightning);
+        function resizeLightning() { lCanvas.width = window.innerWidth; lCanvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeLightning, { passive: true });
         resizeLightning();
 
         function generateLightning() {
             const paths = [];
             const startX = Math.random() * (lCanvas.width * 0.8) + (lCanvas.width * 0.1);
+            const maxDepth = isMobile ? 3 : 4; // optimization
             
             function createBranch(x, y, angle, depth, lengthMod) {
-                if (depth > 4 || y > lCanvas.height) return;
-                
+                if (depth > maxDepth || y > lCanvas.height) return;
                 let cx = x, cy = y;
-                for (let i = 0; i < 20; i++) {
-                    let step = Math.random() * (window.innerWidth < 768 ? 10 : 15) + 10;
+                for (let i = 0; i < (isMobile ? 15 : 20); i++) {
+                    let step = Math.random() * (isMobile ? 10 : 15) + 10;
                     let rad = angle + (Math.random() - 0.5) * 1.2; 
-                    
                     let nx = cx + Math.cos(rad) * step * lengthMod;
                     let ny = cy + Math.sin(rad) * step;
                     
                     paths.push({x1: cx, y1: cy, x2: nx, y2: ny});
                     
-                    if (Math.random() < 0.07 && depth < 4) {
+                    if (Math.random() < 0.07 && depth < maxDepth) {
                         createBranch(nx, ny, angle + (Math.random() > 0.5 ? 0.6 : -0.6), depth + 1, lengthMod * 0.7);
                     }
-                    
                     cx = nx; cy = ny;
                     if (cy > lCanvas.height || Math.random() < 0.02 * depth) break;
                 }
             }
-            
             createBranch(startX, 0, Math.PI / 2, 0, 1.0);
             return paths;
         }
@@ -536,19 +522,13 @@
             lightningState.alpha = 1.0;     
             lightningState.flashAlpha = 0.12; 
             lightningState.active = true;
-            lightningState.nextStrikeDelay = Math.random() * 4000 + 3000;
+            lightningState.nextStrikeDelay = Math.random() * 5000 + 4000;
             lightningState.lastStrike = performance.now();
-            
-            if (soundEnabled) {
-                // Перезапускаем звук грома при каждом новом ударе молнии
-                thunderAudio.currentTime = 0;
-                thunderAudio.play().catch(()=>{});
-            }
+            triggerThunderSound();
         }
 
         function drawLightning(timestamp) {
             if (!lightningState.lastStrike) lightningState.lastStrike = timestamp;
-            
             lCtx.clearRect(0, 0, lCanvas.width, lCanvas.height);
             
             if (!lightningState.active && (timestamp - lightningState.lastStrike > lightningState.nextStrikeDelay)) {
@@ -560,45 +540,35 @@
                     lCtx.fillStyle = `rgba(200, 220, 255, ${lightningState.flashAlpha})`;
                     lCtx.fillRect(0, 0, lCanvas.width, lCanvas.height);
                 }
-
                 if (lightningState.alpha > 0.01) {
                     lCtx.beginPath();
                     for (const p of lightningState.paths) {
                         lCtx.moveTo(p.x1, p.y1);
                         lCtx.lineTo(p.x2, p.y2);
                     }
-                    
-                    lCtx.lineCap = 'round';
-                    lCtx.lineJoin = 'miter';
-                    
-                    lCtx.shadowBlur = 10;
+                    lCtx.lineCap = 'round'; lCtx.lineJoin = 'miter';
+                    lCtx.shadowBlur = isMobile ? 5 : 10;
                     lCtx.shadowColor = '#00e5ff';
-                    
                     lCtx.strokeStyle = `rgba(255, 255, 255, ${lightningState.alpha})`;
-                    lCtx.lineWidth = window.innerWidth < 768 ? 1.5 : 2;
+                    lCtx.lineWidth = isMobile ? 1.5 : 2;
                     lCtx.stroke();
-                    
                     lCtx.shadowBlur = 0;
                 }
-
                 lightningState.alpha -= 0.08;
                 lightningState.flashAlpha -= 0.02;
-
-                if (lightningState.alpha <= 0 && lightningState.flashAlpha <= 0) {
-                    lightningState.active = false;
-                }
+                if (lightningState.alpha <= 0 && lightningState.flashAlpha <= 0) lightningState.active = false;
             }
-            
             requestAnimationFrame(drawLightning);
         }
         requestAnimationFrame(drawLightning);
 
-        // --- 4. Realistic Condensation on Elements ---
+        // --- 4. Optimized Condensation ---
         const dropSpriteCache = document.createElement('canvas');
         dropSpriteCache.width = 40; dropSpriteCache.height = 40;
         const sctx = dropSpriteCache.getContext('2d');
         const cx = 20, cy = 20, cr = 10;
         
+        // Prerender drop with highlights/shadows
         sctx.beginPath();
         sctx.arc(cx, cy + 3, cr, 0, Math.PI*2);
         sctx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -622,16 +592,14 @@
                 this.drops = [];
                 
                 const computedStyle = window.getComputedStyle(this.el);
-                if (computedStyle.position === 'static') {
-                    this.el.style.position = 'relative';
-                }
+                if (computedStyle.position === 'static') this.el.style.position = 'relative';
                 this.el.style.overflow = 'hidden';
                 
                 this.canvas = document.createElement('canvas');
                 this.canvas.style.position = 'absolute';
                 this.canvas.style.top = '0';
                 this.canvas.style.left = '0';
-                this.canvas.style.pointerEvents = 'none';
+                this.canvas.style.pointerEvents = 'none'; // CRITICAL for mobile touch
                 this.canvas.style.zIndex = '0';
                 this.canvas.style.borderRadius = computedStyle.borderRadius;
                 
@@ -639,9 +607,7 @@
                 this.ctx = this.canvas.getContext('2d');
                 
                 this.isVisible = false;
-                this.io = new IntersectionObserver(e => {
-                    this.isVisible = e[0].isIntersecting;
-                }, { threshold: 0 });
+                this.io = new IntersectionObserver(e => { this.isVisible = e[0].isIntersecting; }, { threshold: 0 });
                 this.io.observe(this.el);
 
                 this.resize();
@@ -652,7 +618,7 @@
                         this.resize();
                         lastW = window.innerWidth;
                     }
-                });
+                }, { passive: true });
                 
                 this.initDrops();
                 this.animate();
@@ -668,13 +634,12 @@
             }
 
             initDrops() {
-                const count = Math.floor((this.w * this.h) / (window.innerWidth < 768 ? 5000 : 3500)); 
+                const densityMultiplier = window.innerWidth < 768 ? 4500 : 3000;
+                const count = Math.floor((this.w * this.h) / densityMultiplier); 
                 for(let i=0; i<count; i++) {
                     this.drops.push({
-                        x: Math.random() * this.w,
-                        y: Math.random() * this.h,
-                        r: Math.random() * 1.5 + 1,
-                        moving: Math.random() > 0.85,
+                        x: Math.random() * this.w, y: Math.random() * this.h,
+                        r: Math.random() * 1.5 + 1, moving: Math.random() > 0.85,
                         speed: Math.random() * 0.4 + 0.1
                     });
                 }
@@ -698,21 +663,17 @@
                         d.y += d.speed;
                         d.x += (Math.random() - 0.5) * 0.3; 
                         
-                        if (Math.random() > 0.8) {
-                            this.drops.push({
-                                x: d.x, y: d.y - d.r, r: d.r * 0.4, moving: false, speed: 0
-                            });
+                        if (Math.random() > 0.85) {
+                            this.drops.push({ x: d.x, y: d.y - d.r, r: d.r * 0.4, moving: false, speed: 0 });
                         }
-                        
                         if (d.y > this.h + 10) {
-                            d.y = -10;
-                            d.x = Math.random() * this.w;
-                            d.r = Math.random() * 1.5 + 1.2;
+                            d.y = -10; d.x = Math.random() * this.w; d.r = Math.random() * 1.5 + 1.2;
                         }
                     }
                 }
                 
-                if (this.drops.length > ((this.w * this.h) / (window.innerWidth < 768 ? 2000 : 1500))) {
+                const limit = (this.w * this.h) / (window.innerWidth < 768 ? 2500 : 1500);
+                if (this.drops.length > limit) {
                     this.drops = this.drops.filter(d => d.moving || Math.random() > 0.05);
                 }
                 
