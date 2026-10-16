@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kubyshev Rustam | Junior C++ Developer</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                        mono: ['Space Grotesk', 'monospace'],
+                    },
+                    colors: {
+                        deep: '#02040a',
+                        accent: '#0055ff',
+                        neon: '#00e5ff',
+                        glass: 'rgba(10, 15, 25, 0.4)',
+                        glassBorder: 'rgba(0, 229, 255, 0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #02040a;
+            color: #ffffff;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+        }
+
+        /* =========================================================
+           ПРЕЛОАДЕР (ТЕРМИНАЛ)
+        ========================================================= */
+        #preloader {
+            position: fixed;
+            inset: 0;
+            background-color: #02040a;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Space Grotesk', monospace;
+            transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out;
+        }
+        #preloader.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .terminal-line {
+            margin-bottom: 0.4rem;
+            opacity: 0.9;
+        }
+        .preloader-cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2em;
+            background-color: #00e5ff;
+            animation: blink 1s step-end infinite;
+            vertical-align: text-bottom;
+            margin-left: 4px;
+        }
+
+        /* =========================================================
+           ВИДЕО-ФОН
+        ========================================================= */
+        .video-bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh; 
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .video-bg-container video {
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            display: block;
+        }
+
+        .video-bg-container .glass-overlay {
+            position: absolute;
+            inset: 0;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            background: rgba(2, 4, 10, 0.4);
+            z-index: 1;
+        }
+
+        /* --- Canvases --- */
+        #rain-canvas, #lightning-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+        }
+        #rain-canvas { z-index: 2; }
+        #lightning-canvas { z-index: 3; mix-blend-mode: screen; }
+
+        /* --- Glassmorphism --- */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glassBorder);
+            border-top: 1px solid rgba(0, 229, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            position: relative; 
+        }
+        
+        @media (hover: hover) {
+            .glass-card.interactive:hover {
+                transform: translateY(-5px);
+                border-color: rgba(0, 229, 255, 0.4);
+                box-shadow: 0 15px 40px rgba(0, 229, 255, 0.15);
+            }
+        }
+
+        .text-glow {
+            background: linear-gradient(to right, #00e5ff, #0055ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .progress-ring__circle {
+            transition: stroke-dashoffset 1.5s cubic-bezier(0.65, 0, 0.35, 1);
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .typing-cursor::after {
+            content: '█'; 
+            display: inline-block;
+            margin-left: 4px;
+            color: #00e5ff; 
+            animation: blink 1s step-end infinite;
+        }
+
+        /* =========================================================
+           БЕЙДЖИК
+        ========================================================= */
+        @keyframes dropBounce {
+            0%   { transform: translateY(-120vh); }
+            70%  { transform: translateY(15px); }
+            85%  { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
+
+        @keyframes swing {
+            0%   { transform: rotate(4deg); }
+            100% { transform: rotate(-4deg); }
+        }
+
+        .badge-wrapper {
+            position: absolute;
+            top: -120px;
+            right: 10%;
+            transform-origin: top center;
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: dropBounce 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, 
+                       swing 3.5s 1.2s ease-in-out infinite alternate;
+            opacity: 0;
+        }
+        .badge-wrapper.loaded {
+            opacity: 1;
+        }
+
+        .badge-string {
+            width: 3px;
+            height: 340px; 
+            background: linear-gradient(to bottom, 
+                rgba(0, 0, 0, 0) 0%,
+                rgba(40, 40, 50, 0.6) 8%,
+                rgba(80, 80, 100, 0.9) 25%,
+                #0055ff 70%,
+                #00e5ff 100%);
+            border-radius: 0 0 3px 3px;
+            box-shadow: 0 0 10px rgba(0, 85, 255, 0.5);
+        }
+
+        .badge-card {
+            background: rgba(10, 15, 25, 0.25);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            border-top: 1px solid rgba(0, 229, 255, 0.6);
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            margin-top: -2px; 
+        }
+
+        .badge-clip {
+            width: 3rem;
+            height: 0.625rem;
+            background: rgba(2, 4, 10, 0.6);
+            border: 1px solid rgba(120, 120, 140, 0.5);
+            border-radius: 9999px;
+            margin-bottom: 1rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+        }
+
+        /* === ОПТИМИЗАЦИЯ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ === */
+        @media (max-width: 767px) {
+            .badge-wrapper {
+                /* Сделали бейджик аккуратнее на телефонах */
+                transform: scale(0.55) translateX(10%);
+                right: -30px;
+                top: -100px;
+            }
+            .badge-string {
+                height: 200px;
+            }
+            #home {
+                /* Уменьшили огромный отступ сверху */
+                padding-top: 120px;
+            }
+        }
+        @media (min-width: 768px) {
+            #home {
+                padding-top: 0;
+            }
+        }
+
+        #about .glass-card {
+            background: rgba(5, 8, 15, 0.65);
+        }
+
+        #home h1, #home h2, #home .glass-card {
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #02040a; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(#0055ff, #00e5ff); border-radius: 4px; }
+    </style>
+</head>
+<body class="antialiased selection:bg-neon selection:text-black">
+
+    <div id="preloader">
+        <div class="w-full max-w-2xl px-6 flex flex-col justify-center">
+            <div id="preloader-output" class="flex flex-col mb-4 w-full text-left"></div>
+            <div class="text-neon text-sm md:text-base font-mono flex items-center text-left">
+                <span class="text-accent mr-2">></span> <span id="preloader-current-line"></span><span class="preloader-cursor"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="video-bg-container">
+        <video autoplay loop muted playsinline poster="https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2832&auto=format&fit=crop">
+            <source src="1060840.mp4" type="video/mp4">
+        </video>
+        <div class="glass-overlay"></div>
+    </div>
+
+    <canvas id="rain-canvas"></canvas>
+    <canvas id="lightning-canvas"></canvas>
+
+    <button id="sound-toggle" class="fixed top-24 right-4 md:top-6 md:right-6 z-50 glass-card px-4 py-2 rounded-full flex items-center gap-2 hover:bg-white/10 transition-colors text-xs md:text-sm text-gray-300 font-mono">
+        <i class="fa-solid fa-volume-xmark" id="sound-icon"></i>
+        <span id="sound-text">Звук</span>
+    </button>
+
+    <nav class="fixed w-full z-50 top-0 py-3 px-4 md:px-6 transition-all duration-300 pointer-events-none">
+        <div class="glass-card mx-auto px-4 md:px-6 py-3 flex justify-between items-center max-w-6xl rounded-2xl shadow-lg pointer-events-auto">
+            <a href="#" class="text-lg md:text-xl font-black tracking-widest text-white text-glow font-mono">KUBYSHEV</a>
+            <div class="hidden md:flex space-x-8 text-sm font-semibold tracking-wide relative z-20">
+                <a href="#about" class="hover:text-neon transition duration-300">О себе</a>
+                <a href="#skills" class="hover:text-neon transition duration-300">Навыки</a>
+                <a href="#projects" class="hover:text-neon transition duration-300">Проекты</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Уменьшены отступы gap-12 для мобильных, md:gap-24 для ПК -->
+    <main class="pt-24 md:pt-32 pb-12 md:pb-20 px-4 md:px-6 max-w-6xl mx-auto flex flex-col gap-12 md:gap-24 relative z-10 overflow-hidden" style="z-index: 10;">
+
+        <section id="home" class="min-h-[70vh] md:min-h-[60vh] flex flex-col justify-center items-start text-left reveal active relative">
+            
+            <div class="badge-wrapper" id="badge">
+                <div class="badge-string"></div>
+                <div class="badge-card p-5 md:p-6 rounded-2xl w-[260px] md:w-[280px] flex flex-col items-center pointer-events-auto">
+                    <div class="badge-clip relative z-20"></div>
+                    <div class="text-[10px] font-black tracking-widest text-neon border-b border-neon/30 pb-2 mb-3 w-full text-center relative z-20">
+                        DEVELOPER ID
+                    </div>
+                    <h3 class="font-bold text-white text-lg font-mono mb-1 relative z-20">Kubyshev Rustam</h3>
+                    <p class="text-xs text-neon font-semibold mb-5 md:mb-6 relative z-20">Junior C++ Developer</p>
+                    <div class="w-full pt-4 relative z-20 border-t border-white/10 flex flex-col">
+                        <span class="text-[10px] md:text-xs text-gray-400 uppercase tracking-widest mb-3 md:mb-4 font-bold text-center">Контакты</span>
+                        <div class="flex flex-col gap-3 md:gap-4 w-full pl-1 md:pl-2">
+                            <a href="mailto:kubyshev00@gmail.com" class="flex items-center gap-3 text-gray-300 hover:text-neon transition-colors group">
+                                <div class="w-5 flex justify-center"><i class="fa-solid fa-envelope text-accent group-hover:text-neon"></i></div>
+                                <span class="text-[11px] md:text-xs font-medium tracking-wide">kubyshev00@gmail.com</span>
+                            </a>
+                            <a href="https://t.me/odiqe" target="_blank" class="flex items-center gap-3 text-gray-300 hover:text-neon transition-colors group">
+                                <div class="w-5 flex justify-center"><i class="fa-brands fa-telegram text-accent group-hover:text-neon text-lg"></i></div>
+                                <span class="text-[11px] md:text-xs font-medium tracking-wide">@odiqe</span>
+                            </a>
+                            <a href="https://github.com/yellowliltecca" target="_blank" class="flex items-center gap-3 text-gray-300 hover:text-neon transition-colors group">
+                                <div class="w-5 flex justify-center"><i class="fa-brands fa-github text-accent group-hover:text-neon text-lg"></i></div>
+                                <span class="text-[11px] md:text-xs font-medium tracking-wide">yellowliltecca</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-card px-4 py-1.5 rounded-full mb-6 text-neon text-[10px] md:text-xs font-mono tracking-widest font-semibold flex items-center gap-2 max-w-fit mt-4 md:mt-0">
+                <div class="w-1.5 h-1.5 rounded-full bg-neon animate-pulse shadow-[0_0_10px_#00e5ff]"></div>
+                Саратов
+            </div>
+            
+            <!-- Слегка уменьшен шрифт h1 для узких мобильных экранов (text-4xl вместо 5xl) -->
+            <h1 class="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-4 tracking-tighter leading-tight relative z-20 p-2 -ml-2 rounded-lg">
+                <span class="text-white block">Kubyshev</span>
+                <span class="text-neon block text-glow mt-1">Rustam</span>
+            </h1>
+            
+            <h2 class="typewriter text-xl sm:text-2xl md:text-3xl text-gray-300 mb-8 font-medium max-w-xs sm:max-w-md md:max-w-lg relative z-20 p-2 -ml-2 rounded-lg font-mono" data-speed="180">
+                Junior C++ Developer
+            </h2>
+        </section>
+
+        <!-- ОСТАЛЬНЫЕ СЕКЦИИ БЕЗ ИЗМЕНЕНИЙ (Кроме внешнего контейнера gap) -->
+        <section id="about" class="reveal">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-20">
+                <div class="glass-card rounded-3xl p-6 md:p-8 flex flex-col justify-center">
+                    <h3 class="text-2xl md:text-3xl font-black mb-4 text-white font-mono inline-block p-1">О себе</h3>
+                    <p class="text-gray-300 text-sm md:text-base leading-relaxed mb-4 font-light">
+                        Начинающий разработчик, заинтересованный в создании программного обеспечения. Готов развиваться профессионально, изучать новые технологии и работать в команде. 
+                    </p>
+                    <p class="text-gray-300 text-sm md:text-base leading-relaxed font-light">
+                        Рассматриваю <span class="text-white font-semibold">Junior-вакансии и стажировки</span>.
+                    </p>
+                </div>
+                
+                <div class="flex flex-col gap-6">
+                    <div class="glass-card rounded-3xl p-6 md:p-8 flex items-center gap-6">
+                        <div class="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center text-2xl text-neon shrink-0 z-20">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </div>
+                        <div class="z-20">
+                            <h4 class="font-bold text-white mb-1">Образование</h4>
+                            <p class="text-gray-400 text-sm">СГУ</p>
+                            <p class="text-neon text-xs mt-1 font-mono">Программная инженерия</p>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-card rounded-3xl p-6 md:p-8 flex items-center gap-6">
+                        <div class="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center text-2xl text-purple-400 shrink-0 z-20">
+                            <i class="fa-solid fa-language"></i>
+                        </div>
+                        <div class="z-20">
+                            <h4 class="font-bold text-white mb-1">Английский язык</h4>
+                            <p class="text-gray-400 text-sm">A2–B1 — чтение и понимание текстов.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="skills" class="reveal">
+            <div class="text-center mb-10 md:mb-12"><h2 class="text-2xl md:text-4xl font-black text-white font-mono inline-block p-2">Технические Навыки</h2></div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 mb-8 relative z-20">
+                <div class="glass-card p-6 rounded-3xl flex flex-col items-center justify-center interactive group">
+                    <div class="relative w-24 h-24 md:w-32 md:h-32 flex justify-center items-center">
+                        <svg class="w-full h-full absolute" viewBox="0 0 100 100">
+                            <circle class="text-gray-800 stroke-current" stroke-width="8" cx="50" cy="50" r="40" fill="transparent"></circle>
+                            <circle class="text-accent stroke-current progress-ring__circle drop-shadow-[0_0_8px_rgba(0,85,255,0.8)]" stroke-width="8" stroke-linecap="round" cx="50" cy="50" r="40" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="251.2" data-percent="70"></circle>
+                        </svg>
+                        <i class="fa-solid fa-c text-3xl md:text-4xl text-white group-hover:text-neon transition-colors z-10"></i>
+                    </div>
+                    <div class="mt-4 font-bold text-white tracking-widest text-center">C++<br><span class="text-neon text-sm font-mono">70%</span></div>
+                </div>
+
+                <div class="glass-card p-6 rounded-3xl flex flex-col items-center justify-center interactive group">
+                    <div class="relative w-24 h-24 md:w-32 md:h-32 flex justify-center items-center">
+                        <svg class="w-full h-full absolute" viewBox="0 0 100 100">
+                            <circle class="text-gray-800 stroke-current" stroke-width="8" cx="50" cy="50" r="40" fill="transparent"></circle>
+                            <circle class="text-neon stroke-current progress-ring__circle drop-shadow-[0_0_8px_rgba(0,229,255,0.8)]" stroke-width="8" stroke-linecap="round" cx="50" cy="50" r="40" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="251.2" data-percent="60"></circle>
+                        </svg>
+                        <i class="fa-brands fa-html5 text-3xl md:text-4xl text-white group-hover:text-neon transition-colors z-10"></i>
+                    </div>
+                    <div class="mt-4 font-bold text-white tracking-widest text-center">HTML & CSS<br><span class="text-neon text-sm font-mono">60%</span></div>
+                </div>
+
+                <div class="glass-card p-6 rounded-3xl flex flex-col items-center justify-center interactive group col-span-2 md:col-span-1">
+                    <div class="relative w-24 h-24 md:w-32 md:h-32 flex justify-center items-center">
+                        <svg class="w-full h-full absolute" viewBox="0 0 100 100">
+                            <circle class="text-gray-800 stroke-current" stroke-width="8" cx="50" cy="50" r="40" fill="transparent"></circle>
+                            <circle class="text-yellow-400 stroke-current progress-ring__circle drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" stroke-width="8" stroke-linecap="round" cx="50" cy="50" r="40" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="251.2" data-percent="50"></circle>
+                        </svg>
+                        <i class="fa-brands fa-python text-3xl md:text-4xl text-white group-hover:text-yellow-400 transition-colors z-10"></i>
+                    </div>
+                    <div class="mt-4 font-bold text-white tracking-widest text-center">PYTHON<br><span class="text-yellow-400 text-sm font-mono">50%</span></div>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-3 md:gap-4 relative z-20">
+                <div class="glass-card interactive px-4 py-2 md:px-6 md:py-3 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-code-branch text-green-400 text-sm md:text-base"></i>
+                    <span class="text-sm md:text-base font-bold text-white">Основы алгоритмов и структур данных</span>
+                </div>
+                <div class="glass-card interactive px-4 py-2 md:px-6 md:py-3 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-cube text-purple-400 text-sm md:text-base"></i>
+                    <span class="text-sm md:text-base font-bold text-white">Основы ООП</span>
+                </div>
+                <div class="glass-card interactive px-4 py-2 md:px-6 md:py-3 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-bug text-red-400 text-sm md:text-base"></i>
+                    <span class="text-sm md:text-base font-bold text-white">Написание и отладка программ</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="projects" class="reveal">
+            <div class="text-center mb-10 md:mb-12"><h2 class="text-2xl md:text-4xl font-black text-white font-mono inline-block p-2">Мои Проекты</h2></div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-20">
+                <div class="glass-card interactive rounded-2xl p-6 flex flex-col group">
+                    <div class="w-12 h-12 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center mb-5 group-hover:scale-110 transition duration-300 relative z-20">
+                        <i class="fa-solid fa-terminal text-2xl text-neon"></i>
+                    </div>
+                    <h4 class="text-lg md:text-xl font-bold mb-3 text-white relative z-20">Консольное приложение</h4>
+                    <p class="text-gray-400 text-sm flex-grow mb-6 font-light relative z-20">Консольное приложение на C++ для обработки данных.</p>
+                    <div class="flex flex-wrap gap-2 relative z-20">
+                        <span class="px-2.5 py-1 text-[10px] uppercase font-bold rounded-md bg-deep border border-neon/50 text-neon">C++</span>
+                    </div>
+                </div>
+                
+                <div class="glass-card interactive rounded-2xl p-6 flex flex-col group">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center mb-5 group-hover:scale-110 transition duration-300 relative z-20">
+                        <i class="fa-solid fa-network-wired text-2xl text-purple-400"></i>
+                    </div>
+                    <h4 class="text-lg md:text-xl font-bold mb-3 text-white relative z-20">Алгоритмические задачи</h4>
+                    <p class="text-gray-400 text-sm flex-grow mb-6 font-light relative z-20">Алгоритмические задачи на C++.</p>
+                    <div class="flex flex-wrap gap-2 relative z-20">
+                        <span class="px-2.5 py-1 text-[10px] uppercase font-bold rounded-md bg-deep border border-purple-500/50 text-purple-400">C++</span>
+                        <span class="px-2.5 py-1 text-[10px] uppercase font-bold rounded-md bg-deep border border-gray-500/50 text-gray-300">Algorithms</span>
+                    </div>
+                </div>
+                
+                <div class="glass-card interactive rounded-2xl p-6 flex flex-col group">
+                    <div class="w-12 h-12 rounded-xl bg-green-500/20 border border-green-500/40 flex items-center justify-center mb-5 group-hover:scale-110 transition duration-300 relative z-20">
+                        <i class="fa-solid fa-globe text-2xl text-green-400"></i>
+                    </div>
+                    <h4 class="text-lg md:text-xl font-bold mb-3 text-white relative z-20">Веб-разработка</h4>
+                    <p class="text-gray-400 text-sm flex-grow mb-6 font-light relative z-20">Веб-страница с использованием HTML и CSS.</p>
+                    <div class="flex flex-wrap gap-2 relative z-20">
+                        <span class="px-2.5 py-1 text-[10px] uppercase font-bold rounded-md bg-deep border border-green-500/50 text-green-400">HTML</span>
+                        <span class="px-2.5 py-1 text-[10px] uppercase font-bold rounded-md bg-deep border border-blue-500/50 text-blue-400">CSS</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-neon/10 py-6 md:py-8 mt-4 text-center text-gray-600 font-mono text-xs relative z-10" style="z-index: 10;">
+        <p>© 2026 <span class="text-gray-400">Kubyshev Rustam</span>. Junior C++ Developer.</p>
+    </footer>
+
+    <script>
+        document.body.style.overflow = 'hidden'; 
+
+        const preloader = document.getElementById('preloader');
+        const preloaderOutput = document.getElementById('preloader-output');
+        const preloaderCurrentLine = document.getElementById('preloader-current-line');
+        
+        const compileLines = [
+            "Initializing build environment...",
+            "Checking compiler: x86_64-w64-mingw32-g++ (GCC) 13.2.0... [OK]",
+            "Loading CMakeLists.txt... [DONE]",
+            "Scanning dependencies of target portfolio...",
+            "Compiling src/main.cpp... [OK]",
+            "Compiling src/skills.cpp... [OK]",
+            "Compiling src/projects.cpp... [OK]",
+            "Linking CXX executable portfolio.exe... [OK]",
+            "Build finished with 0 errors, 0 warnings.",
+            "Executing portfolio.exe..."
+        ];
+
+        let lineIndex = 0;
+
+        function simulateTerminal() {
+            if (lineIndex < compileLines.length) {
+                if (lineIndex > 0) {
+                    const p = document.createElement('div');
+                    p.className = 'terminal-line text-sm md:text-base text-gray-400';
+                    p.innerHTML = `<span class="text-accent">></span> ${compileLines[lineIndex - 1]}`;
+                    preloaderOutput.appendChild(p);
+                }
+                
+                preloaderCurrentLine.textContent = compileLines[lineIndex];
+                lineIndex++;
+                
+                setTimeout(simulateTerminal, Math.random() * 150 + 50);
+            } else {
+                setTimeout(() => {
+                    preloader.classList.add('fade-out');
+                    setTimeout(() => {
+                        preloader.remove();
+                        document.body.style.overflow = ''; 
+                        document.getElementById('badge').classList.add('loaded'); 
+                        initMainAnimations(); 
+                    }, 800);
+                }, 400);
+            }
+        }
+
+        setTimeout(simulateTerminal, 200);
+
+        function initMainAnimations() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) entry.target.classList.add('active');
+                });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+            const statsObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const circle = entry.target;
+                        const percent = circle.getAttribute('data-percent');
+                        circle.style.strokeDashoffset = 251.2 - (251.2 * percent / 100);
+                        statsObserver.unobserve(circle);
+                    }
+                });
+            }, { threshold: 0.5 });
+            document.querySelectorAll('.progress-ring__circle').forEach(el => statsObserver.observe(el));
+
+            const typeObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !entry.target.classList.contains('typed')) {
+                        entry.target.classList.add('typed');
+                        entry.target.classList.add('typing-cursor');
+                        
+                        const text = entry.target.getAttribute('data-text');
+                        const speed = parseInt(entry.target.getAttribute('data-speed')) || 70;
+                        let i = 0;
+                        
+                        const typeWriter = setInterval(() => {
+                            if (i < text.length) {
+                                entry.target.textContent += text.charAt(i);
+                                i++;
+                            } else {
+                                clearInterval(typeWriter);
+                                if (window.innerWidth >= 768) {
+                                    new CondensationCanvas(entry.target);
+                                }
+                            }
+                        }, speed);
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            document.querySelectorAll('.typewriter').forEach(el => {
+                el.setAttribute('data-text', el.textContent.trim());
+                el.textContent = '';
+                typeObserver.observe(el);
+            });
+        }
+
+        let audioEnabled = false;
+        const rainAudio = new Audio('https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg');
+        rainAudio.loop = true;
+        rainAudio.volume = 0.3;
+
+        const thunderAudio = new Audio('https://actions.google.com/sounds/v1/weather/thunder_crack.ogg');
+        thunderAudio.volume = 0.8;
+
+        const soundToggle = document.getElementById('sound-toggle');
+        const soundIcon = document.getElementById('sound-icon');
+
+        function initAudio() {
+            rainAudio.play().catch(err => console.log("Audio play blocked by browser:", err));
+            audioEnabled = true;
+            soundIcon.classList.remove('fa-volume-xmark');
+            soundIcon.classList.add('fa-volume-high');
+        }
+
+        function triggerThunderSound() {
+            if (!audioEnabled) return;
+            setTimeout(() => {
+                thunderAudio.currentTime = 0;
+                thunderAudio.play().catch(err => console.log("Audio play blocked:", err));
+            }, Math.random() * 200 + 100); 
+        }
+
+        soundToggle.addEventListener('click', () => {
+            if (!audioEnabled) {
+                initAudio();
+            } else {
+                audioEnabled = false;
+                rainAudio.pause();
+                soundIcon.classList.remove('fa-volume-high');
+                soundIcon.classList.add('fa-volume-xmark');
+            }
+        });
+
+        const isMobile = window.innerWidth < 768;
+
+        const rCanvas = document.getElementById('rain-canvas');
+        const rCtx = rCanvas.getContext('2d', { alpha: true });
+        let rW, rH, rDrops = [];
+
+        function initRain() {
+            rW = rCanvas.width = window.innerWidth;
+            rH = rCanvas.height = window.innerHeight;
+            rDrops = [];
+            // Оптимизация для мобильных: чуть меньше капель
+            const dropCount = isMobile ? 25 : 100;
+            for (let i = 0; i < dropCount; i++) {
+                rDrops.push({
+                    x: Math.random() * rW, y: Math.random() * rH,
+                    len: Math.random() * 20 + 10, vel: Math.random() * 10 + 15
+                });
+            }
+        }
+        window.addEventListener('resize', () => {
+            if (Math.abs(window.innerWidth - rW) > 50) initRain();
+            else rCanvas.height = rH = window.innerHeight;
+        }, { passive: true });
+        initRain();
+
+        function drawRain() {
+            rCtx.clearRect(0, 0, rW, rH);
+            rCtx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
+            rCtx.lineWidth = 1;
+            rCtx.beginPath();
+            
+            for (let i = 0; i < rDrops.length; i++) {
+                let p = rDrops[i];
+                rCtx.moveTo(p.x, p.y);
+                rCtx.lineTo(p.x, p.y + p.len);
+                p.y += p.vel;
+                if (p.y > rH) { p.y = -20; p.x = Math.random() * rW; }
+            }
+            rCtx.stroke();
+            requestAnimationFrame(drawRain);
+        }
+        requestAnimationFrame(drawRain);
+
+        const lCanvas = document.getElementById('lightning-canvas');
+        const lCtx = lCanvas.getContext('2d');
+        let lightningState = {
+            active: false, alpha: 0, flashAlpha: 0, paths: [],
+            lastStrike: 0, nextStrikeDelay: Math.random() * 5000 + 4000
+        };
+
+        function resizeLightning() { lCanvas.width = window.innerWidth; lCanvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeLightning, { passive: true });
+        resizeLightning();
+
+        function generateLightning() {
+            const paths = [];
+            const startX = Math.random() * (lCanvas.width * 0.8) + (lCanvas.width * 0.1);
+            const maxDepth = isMobile ? 3 : 4;
+            
+            function createBranch(x, y, angle, depth, lengthMod) {
+                if (depth > maxDepth || y > lCanvas.height) return;
+                let cx = x, cy = y;
+                for (let i = 0; i < (isMobile ? 10 : 20); i++) {
+                    let step = Math.random() * (isMobile ? 10 : 15) + 10;
+                    let rad = angle + (Math.random() - 0.5) * 1.2; 
+                    let nx = cx + Math.cos(rad) * step * lengthMod;
+                    let ny = cy + Math.sin(rad) * step;
+                    
+                    paths.push({x1: cx, y1: cy, x2: nx, y2: ny});
+                    
+                    if (Math.random() < 0.07 && depth < maxDepth) {
+                        createBranch(nx, ny, angle + (Math.random() > 0.5 ? 0.6 : -0.6), depth + 1, lengthMod * 0.7);
+                    }
+                    cx = nx; cy = ny;
+                    if (cy > lCanvas.height || Math.random() < 0.02 * depth) break;
+                }
+            }
+            createBranch(startX, 0, Math.PI / 2, 0, 1.0);
+            return paths;
+        }
+
+        function triggerLightning() {
+            lightningState.paths = generateLightning();
+            lightningState.alpha = 1.0;     
+            lightningState.flashAlpha = 0.12; 
+            lightningState.active = true;
+            lightningState.nextStrikeDelay = Math.random() * 5000 + 4000;
+            lightningState.lastStrike = performance.now();
+            triggerThunderSound();
+        }
+
+        function drawLightning(timestamp) {
+            if (!lightningState.lastStrike) lightningState.lastStrike = timestamp;
+            lCtx.clearRect(0, 0, lCanvas.width, lCanvas.height);
+            
+            if (!lightningState.active && (timestamp - lightningState.lastStrike > lightningState.nextStrikeDelay)) {
+                triggerLightning();
+            }
+
+            if (lightningState.active) {
+                if (lightningState.flashAlpha > 0.01) {
+                    lCtx.fillStyle = `rgba(200, 220, 255, ${lightningState.flashAlpha})`;
+                    lCtx.fillRect(0, 0, lCanvas.width, lCanvas.height);
+                }
+                if (lightningState.alpha > 0.01) {
+                    lCtx.beginPath();
+                    for (const p of lightningState.paths) {
+                        lCtx.moveTo(p.x1, p.y1);
+                        lCtx.lineTo(p.x2, p.y2);
+                    }
+                    lCtx.lineCap = 'round'; lCtx.lineJoin = 'miter';
+                    lCtx.shadowBlur = isMobile ? 5 : 10;
+                    lCtx.shadowColor = '#00e5ff';
+                    lCtx.strokeStyle = `rgba(255, 255, 255, ${lightningState.alpha})`;
+                    lCtx.lineWidth = isMobile ? 1.5 : 2;
+                    lCtx.stroke();
+                    lCtx.shadowBlur = 0;
+                }
+                lightningState.alpha -= 0.08;
+                lightningState.flashAlpha -= 0.02;
+                if (lightningState.alpha <= 0 && lightningState.flashAlpha <= 0) lightningState.active = false;
+            }
+            requestAnimationFrame(drawLightning);
+        }
+        requestAnimationFrame(drawLightning);
+
+        const dropSpriteCache = document.createElement('canvas');
+        dropSpriteCache.width = 40; dropSpriteCache.height = 40;
+        const sctx = dropSpriteCache.getContext('2d');
+        const cx = 20, cy = 20, cr = 10;
+        
+        sctx.beginPath();
+        sctx.arc(cx, cy + 3, cr, 0, Math.PI*2);
+        sctx.fillStyle = 'rgba(0,0,0,0.3)';
+        sctx.fill();
+        sctx.beginPath();
+        sctx.arc(cx, cy, cr, 0, Math.PI*2);
+        let grad = sctx.createRadialGradient(cx, cy - 2, 0, cx, cy, cr);
+        grad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+        grad.addColorStop(0.3, 'rgba(0, 229, 255, 0.15)');
+        grad.addColorStop(1, 'rgba(0, 20, 40, 0.5)');
+        sctx.fillStyle = grad;
+        sctx.fill();
+        sctx.beginPath();
+        sctx.arc(cx - 3, cy - 3, cr * 0.25, 0, Math.PI*2);
+        sctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        sctx.fill();
+
+        class CondensationCanvas {
+            constructor(element) {
+                this.el = element;
+                this.drops = [];
+                
+                const computedStyle = window.getComputedStyle(this.el);
+                if (computedStyle.position === 'static') this.el.style.position = 'relative';
+                this.el.style.overflow = 'hidden';
+                
+                this.canvas = document.createElement('canvas');
+                this.canvas.style.position = 'absolute';
+                this.canvas.style.top = '0';
+                this.canvas.style.left = '0';
+                this.canvas.style.pointerEvents = 'none';
+                this.canvas.style.zIndex = '0';
+                this.canvas.style.borderRadius = computedStyle.borderRadius;
+                
+                this.el.insertBefore(this.canvas, this.el.firstChild);
+                this.ctx = this.canvas.getContext('2d');
+                
+                this.isVisible = false;
+                this.io = new IntersectionObserver(e => { this.isVisible = e[0].isIntersecting; }, { threshold: 0 });
+                this.io.observe(this.el);
+
+                this.resize();
+                
+                let lastW = window.innerWidth;
+                window.addEventListener('resize', () => {
+                    if(Math.abs(window.innerWidth - lastW) > 10) {
+                        this.resize();
+                        lastW = window.innerWidth;
+                    }
+                }, { passive: true });
+                
+                this.initDrops();
+                this.animate();
+            }
+
+            resize() {
+                this.w = this.el.offsetWidth;
+                this.h = this.el.offsetHeight;
+                if (this.w > 0 && this.h > 0) {
+                    this.canvas.width = this.w;
+                    this.canvas.height = this.h;
+                }
+            }
+
+            initDrops() {
+                // ОПТИМИЗАЦИЯ ДЛЯ МОБИЛЬНЫХ: Огромное уменьшение количества капель
+                const densityMultiplier = window.innerWidth < 768 ? 9000 : 3000;
+                const count = Math.floor((this.w * this.h) / densityMultiplier); 
+                for(let i=0; i<count; i++) {
+                    this.drops.push({
+                        x: Math.random() * this.w, y: Math.random() * this.h,
+                        r: Math.random() * 1.5 + 1, moving: Math.random() > 0.85,
+                        speed: Math.random() * 0.4 + 0.1
+                    });
+                }
+            }
+
+            animate() {
+                if (!this.isVisible || !this.w) {
+                    requestAnimationFrame(() => this.animate());
+                    return;
+                }
+                
+                this.ctx.clearRect(0, 0, this.w, this.h);
+                
+                for (let i = 0; i < this.drops.length; i++) {
+                    let d = this.drops[i];
+                    let s = d.r * 2.5; 
+                    
+                    this.ctx.drawImage(dropSpriteCache, d.x - s/2, d.y - s/2, s, s);
+                    
+                    if (d.moving) {
+                        d.y += d.speed;
+                        d.x += (Math.random() - 0.5) * 0.3; 
+                        
+                        if (Math.random() > 0.85) {
+                            this.drops.push({ x: d.x, y: d.y - d.r, r: d.r * 0.4, moving: false, speed: 0 });
+                        }
+                        if (d.y > this.h + 10) {
+                            d.y = -10; d.x = Math.random() * this.w; d.r = Math.random() * 1.5 + 1.2;
+                        }
+                    }
+                }
+                
+                const limit = (this.w * this.h) / (window.innerWidth < 768 ? 4500 : 1500);
+                if (this.drops.length > limit) {
+                    this.drops = this.drops.filter(d => d.moving || Math.random() > 0.05);
+                }
+                
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        window.addEventListener('load', () => {
+            // На телефонах мы отключаем тяжелый блюр-эффект росы на тексте, оставляя только на карточках
+            document.querySelectorAll('.glass-card' + (window.innerWidth >= 768 ? ', h1, h2, h3, h4' : '')).forEach(el => {
+                if(!el.classList.contains('typewriter')) {
+                    new CondensationCanvas(el);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
